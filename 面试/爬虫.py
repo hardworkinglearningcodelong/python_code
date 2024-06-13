@@ -1,29 +1,41 @@
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
+import time
 
-url = 'https://iftp.chinamoney.com.cn/english/bdInfo/'
-response = requests.get(url, headers={'User-Agent':
-                                          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'})
-print(response.text)
-soup = BeautifulSoup(response.text, 'html.parser')
+def get_html(url,data):
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'}
+    response = requests.get(url, headers=headers, params=data)
+    return response.json()['data']['resultList']
 
-# 检查HTML内容中是否存在表格
-tables = soup.find_all('table',{'class','san-sheet-alternating'})
-if tables:
-    # 尝试使用pandas读取找到的表格
-    df = pd.read_html(str(tables[0]))[0]
-    print(df)
-else:
-    print("No tables .")
-
-# 过滤条件:债券类型为国债,发行年份为2023
-mask = (tables['Bond Type'] == 'Treasury Bond') & (tables['Issue Year'] == 2023)
-table = tables[mask]
-# 选择需要的列
-cols = ['ISIN', 'Bond Code', 'Issuer', 'Bond Type', 'Issue Date', 'Latest Rating']
-table = table[cols]
-# 因为有多余列,重新设置列顺序和列名
-table = table[['ISIN', 'Bond Code', 'Issuer', 'Bond Type', 'Issue Date', 'Latest Rating']]
-# 保存为CSV文件
-table.to_csv('chinamoney_bonds_2023.csv', index=False)
+def get_json(json_data):
+    for data in json_data:
+        ISIN = data['isin']
+        Bond_code = data['bondCode']
+        Issuer = data['entyFullName']
+        Bond_Type = data['bondType']
+        df = pd.DataFrame({
+            'ISIN': [ISIN],
+            'Bond_code': [Bond_code],
+            'Issuer': [Issuer],
+            'Bond_Type':[Bond_Type]
+        })
+        df.to_csv('tianqi.csv', mode='a', header=False, index=False)
+if __name__ == '__main__':
+    for a in range(1, 9):
+        url = 'https://iftp.chinamoney.com.cn/ags/ms/cm-u-bond-md/BondMarketInfoListEN'
+        data = {
+            'pageNo': a,
+            'pageSize': 15,
+            'isin': '',
+            'bondCode': '',
+            'issueEnty': '',
+            'bondType': 100001,
+            'couponType': '',
+            'issueYear': 2023,
+            'rtngShrt': '',
+            'bondSpclPrjctVrty': ''
+        }
+        html = get_html(url, data)
+        get_json(html)
+        # print(f'正在爬取第{a}页')
