@@ -1,8 +1,11 @@
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
-import time
-
+import time,os
+ef init_csv():
+    """初始化CSV文件，仅在文件不存在时写入列名"""
+    if not os.path.exists('tianqi.csv'):
+        pd.DataFrame(columns=['ISIN', 'Bond_code', 'Issuer', 'Bond_Type']).to_csv('shuju.csv', index=False)
 def get_html(url,data):
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'}
     response = requests.get(url, headers=headers, params=data)
@@ -20,7 +23,7 @@ def get_json(json_data):
             'Issuer': [Issuer],
             'Bond_Type':[Bond_Type]
         })
-        df.to_csv('tianqi.csv', mode='a', header=False, index=False)
+        df.to_csv('shuju.csv', mode='a', header=False, index=False)
 if __name__ == '__main__':
     for a in range(1, 9):
         url = 'https://iftp.chinamoney.com.cn/ags/ms/cm-u-bond-md/BondMarketInfoListEN'
